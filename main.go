@@ -3,19 +3,24 @@ package main
 import (
 	"fmt"
 	"github.com/svntax/PlayingCardsBot/playingcards"
+	"math/rand"
+	"time"
 )
 
 func main() {
-	testCard := playingcards.NewCard(1, "clubs")
-	testCard2 := playingcards.NewCard(5, "diamonds")
-	testCard3 := playingcards.NewCard(10, "hearts")
-	testCard4 := playingcards.NewCard(11, "Spades")
-	testCard5 := playingcards.NewCard(12, "DIAMONDS")
-	testCard6 := playingcards.NewCard(13, "Hearts")
-	fmt.Println(testCard)
-	fmt.Println(testCard2)
-	fmt.Println(testCard3)
-	fmt.Println(testCard4)
-	fmt.Println(testCard5)
-	fmt.Println(testCard6)
+	rand.Seed(time.Now().Unix())
+
+	deck := playingcards.NewDeck()
+	deck.Shuffle()
+	for i := 1; i <= 53; i++ {
+		card := deck.DrawCard()
+		fmt.Println(card)
+	}
+	deck.Shuffle()
+	fmt.Println(deck.DrawCard())
+
+	deck = playingcards.NewDeck()
+	for i := 1; i <= 52; i++ {
+		fmt.Println(deck.DrawCard())
+	}
 }

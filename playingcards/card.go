@@ -46,7 +46,7 @@ func (c Card) NumberAsString() string {
 	case 13:
 		return "King"
 	default:
-		panic("Invalid playing card number")
+		return "Invalid value"
 	}
 }
 
@@ -73,11 +73,8 @@ func SuitStringToInt(suit string) Suit {
 }
 
 // NewCard creates a new playing card
-func NewCard(num int, suit string) Card {
-	if num < 1 || num > 13 {
-		panic("A card's value must be from 1 to 13.")
-	}
-	c := Card{number: num, suit: SuitStringToInt(suit)}
+func NewCard(num int, s Suit) Card {
+	c := Card{number: num, suit: s}
 	return c
 }
 
@@ -96,6 +93,11 @@ func (c Card) Color() string {
 // Suit returns the card's suit
 func (c Card) Suit() Suit {
 	return c.suit
+}
+
+// Value returns the card's value
+func (c Card) Value() int {
+	return c.number
 }
 
 func (c Card) String() string {
