@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/svntax/PlayingCardsBot/playingcards"
+	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -52,8 +54,22 @@ func NewServerState(guildID string) *ServerState {
 	return &ss
 }
 
+func mainHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Playing cards bot server.")
+}
+
+func startServer(server *http.ServeMux) {
+	log.Println("Server started on port 8080")
+	http.ListenAndServe(":8080", server)
+}
+
 func main() {
 	rand.Seed(time.Now().Unix())
+
+	mainServer := http.NewServeMux()
+	mainServer.HandleFunc("/", mainHandler)
+
+	go startServer(mainServer)
 
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + Token)
