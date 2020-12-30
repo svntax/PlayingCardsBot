@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Bot token is passed as a command line argument
+// Bot token can be passed as a command line argument
 var (
 	Token string
 )
@@ -21,6 +21,18 @@ var (
 func init() {
 	flag.StringVar(&Token, "t", "", "Bot Token")
 	flag.Parse()
+	flagFound := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "t" {
+			if len(f.Value.String()) > 0 {
+				flagFound = true
+			}
+		}
+	})
+	if !flagFound {
+		// Bot token is read as an environment variable if no command line argument was found
+		Token = os.Getenv("BOT_TOKEN")
+	}
 }
 
 // ServerState holds data on the current state of a Discord server
@@ -76,7 +88,6 @@ func main() {
 func GetServerState(guildID string) *ServerState {
 	state, exists := serverStates[guildID]
 	if !exists {
-		fmt.Println("New guild:", guildID)
 		// Add the server to the list of servers
 		state = NewServerState(guildID)
 		serverStates[guildID] = state
