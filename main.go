@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -30,6 +31,8 @@ type ServerState struct {
 }
 
 var serverStates = make(map[string]*ServerState)
+
+var prefix string = "$pcb "
 
 // NewServerState creates a new state struct for the given Discord server
 func NewServerState(guildID string) *ServerState {
@@ -67,22 +70,6 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	dg.Close()
-
-	/*
-		deck := playingcards.NewDeck()
-		deck.Shuffle()
-		for i := 1; i <= 53; i++ {
-			card := deck.DrawCard()
-			fmt.Println(card)
-		}
-		deck.Shuffle()
-		fmt.Println(deck.DrawCard())
-
-		deck = playingcards.NewDeck()
-		for i := 1; i <= 52; i++ {
-			fmt.Println(deck.DrawCard())
-		}
-	*/
 }
 
 // GetServerState looks for the given server and returns it if it exists, or creates a new entry first
@@ -104,22 +91,27 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
+	// Check for the prefix string
+	if !strings.HasPrefix(m.Content, prefix) {
+		return
+	}
+	command := strings.TrimPrefix(m.Content, prefix)
 
-	if m.Content == "info" {
+	if command == "info" {
 		s.ChannelMessageSend(m.ChannelID, "This bot allows users to play with a standard 52-card deck of playing cards.")
 	}
 
-	if m.Content == "draw" {
+	if command == "draw" {
 		state := GetServerState(m.GuildID)
 		cardDrawn := state.deck.DrawCard()
 		s.ChannelMessageSend(m.ChannelID, cardDrawn.String())
 	}
-	if m.Content == "shuffle" {
+	if command == "shuffle" {
 		state := GetServerState(m.GuildID)
 		state.deck.Shuffle()
 		s.ChannelMessageSend(m.ChannelID, "Cards shuffled!")
 	}
-	if m.Content == "reset_cards" {
+	if command == "reset_cards" {
 		state := GetServerState(m.GuildID)
 		state.deck = playingcards.NewDeck()
 		s.ChannelMessageSend(m.ChannelID, "Cards have been reset.")
