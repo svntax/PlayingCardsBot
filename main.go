@@ -162,9 +162,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			// URL of the server hosting the images
 			hostURL := os.Getenv("HOST_URL")
 			if len(hostURL) == 0 {
-				hostURL = "http://localhost"
+				hostURL = "http://localhost:8080"
 			}
-			cardURL := fmt.Sprintf("%s:8080/%s", hostURL, cardPath)
+			cardURL := fmt.Sprintf("%s/%s", hostURL, cardPath)
 			message := &discordgo.MessageEmbed{
 				Color: 0x7fb2f0,
 				Title: cardDrawn.String(),
