@@ -26,6 +26,11 @@ func NewDeck() Deck {
 	return Deck{cards: deck}
 }
 
+// Size returns the number of cards remaining in this deck
+func (d Deck) Size() int {
+	return len(d.cards)
+}
+
 // DrawCard removes the top card from the deck and returns it
 func (d *Deck) DrawCard() Card {
 	if len(d.cards) > 0 {

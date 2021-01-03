@@ -68,6 +68,7 @@ func main() {
 
 	mainServer := http.NewServeMux()
 	mainServer.HandleFunc("/", mainHandler)
+	mainServer.Handle("/card_images/", http.StripPrefix("/card_images/", http.FileServer(http.Dir("./card_images"))))
 
 	go startServer(mainServer)
 
@@ -113,6 +114,29 @@ func GetServerState(guildID string) *ServerState {
 	return state
 }
 
+// GetCardPath is specific to how the card images are named
+func GetCardPath(card playingcards.Card) string {
+	// Kenney's cards are of the format "card_<suit>_XX"
+	suit := strings.ToLower(card.Suit().String())
+	valueString := ""
+	switch card.Value() {
+	case 1:
+		valueString = "A"
+	case 2, 3, 4, 5, 6, 7, 8, 9, 10:
+		valueString = fmt.Sprintf("%02d", card.Value())
+	case 11:
+		valueString = "J"
+	case 12:
+		valueString = "Q"
+	case 13:
+		valueString = "K"
+	default:
+		return ""
+	}
+	path := fmt.Sprintf("card_images/kenney_cards_large/card_%s_%s.png", suit, valueString)
+	return path
+}
+
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
@@ -131,7 +155,28 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if command == "draw" {
 		state := GetServerState(m.GuildID)
 		cardDrawn := state.deck.DrawCard()
-		s.ChannelMessageSend(m.ChannelID, cardDrawn.String())
+		if strings.Contains(cardDrawn.String(), "Invalid") {
+			s.ChannelMessageSend(m.ChannelID, "No more cards left!")
+		} else {
+			cardPath := GetCardPath(cardDrawn)
+			// URL of the server hosting the images
+			hostURL := os.Getenv("HOST_URL")
+			if len(hostURL) == 0 {
+				hostURL = "http://localhost"
+			}
+			cardURL := fmt.Sprintf("%s:8080/%s", hostURL, cardPath)
+			message := &discordgo.MessageEmbed{
+				Color: 0x7fb2f0,
+				Title: cardDrawn.String(),
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: fmt.Sprintf("%d cards remaining.", state.deck.Size()),
+				},
+				Image: &discordgo.MessageEmbedImage{
+					URL: cardURL,
+				},
+			}
+			s.ChannelMessageSendEmbed(m.ChannelID, message)
+		}
 	}
 	if command == "shuffle" {
 		state := GetServerState(m.GuildID)
