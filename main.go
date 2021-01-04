@@ -63,7 +63,7 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	mainServer := http.NewServeMux()
-	//mainServer.Handle("/", http.FileServer(http.Dir"./public"))
+	mainServer.Handle("/", http.FileServer(http.Dir("./public")))
 	mainServer.Handle("/card_images/", http.StripPrefix("/card_images/", http.FileServer(http.Dir("./card_images"))))
 
 	go startServer(mainServer)
