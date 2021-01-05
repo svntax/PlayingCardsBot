@@ -37,11 +37,25 @@ func init() {
 	}
 }
 
+// Constants for the games supported by the bot
+const (
+	NoGame int = iota
+	HighOrLow
+)
+
+// GameState represents the current game running in a Discord server
+type GameState struct {
+	gameType      int
+	channelID     string
+	lastMessageID string
+}
+
 // ServerState holds data on the current state of a Discord server
 type ServerState struct {
-	id             string
-	deck           playingcards.Deck
-	gameInProgress bool
+	id      string
+	deck    playingcards.Deck
+	game    GameState
+	players map[string]bool
 }
 
 var serverStates = make(map[string]*ServerState)
@@ -50,8 +64,18 @@ var prefix string = "$pcb "
 
 // NewServerState creates a new state struct for the given Discord server
 func NewServerState(guildID string) *ServerState {
-	ss := ServerState{id: guildID}
+	ss := ServerState{id: guildID, players: make(map[string]bool)}
 	return &ss
+}
+
+// GameType returns the type of game currently running in the given Discord server
+func (s ServerState) GameType() int {
+	return s.game.gameType
+}
+
+// Players returns a list of active (alive) and inactive(dead) players for the current game session in a Discord server
+func (s *ServerState) Players() map[string]bool {
+	return s.players
 }
 
 func startServer(server *http.ServeMux) {
@@ -75,11 +99,13 @@ func main() {
 		return
 	}
 
-	// Register the messageCreate func as a callback for MessageCreate events.
+	// Listen for MessageCreate events.
 	dg.AddHandler(messageCreate)
+	// Listen for MessageReactionAdd events
+	dg.AddHandler(messageReactionAdd)
 
 	// In this example, we only care about receiving message events.
-	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
+	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuildMessageReactions)
 
 	err = dg.Open()
 	if err != nil {
@@ -133,6 +159,18 @@ func GetCardPath(card playingcards.Card) string {
 	return path
 }
 
+// GetCardURL returns the full url to the image for the given card
+func GetCardURL(card playingcards.Card) string {
+	cardPath := GetCardPath(card)
+	// URL of the server hosting the images
+	hostURL := os.Getenv("HOST_URL")
+	if len(hostURL) == 0 {
+		hostURL = "http://localhost:8080"
+	}
+	cardURL := fmt.Sprintf("%s/%s", hostURL, cardPath)
+	return cardURL
+}
+
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
@@ -148,19 +186,40 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "This bot allows users to play with a standard 52-card deck of playing cards.")
 	}
 
+	if command == "high_or_low" {
+		state := GetServerState(m.GuildID)
+		if state.GameType() != NoGame {
+			s.ChannelMessageSend(m.ChannelID, gameInProgressWarning())
+			return
+		}
+		message := &discordgo.MessageEmbed{
+			Color:       0x3dbb6b,
+			Title:       "High or Low",
+			Description: "Guess whether the next card will be higher or lower.\nReact with your choice.",
+			Footer: &discordgo.MessageEmbedFooter{
+				Text: "Game starting in 5 seconds...",
+			},
+		}
+		_, err := s.ChannelMessageSendEmbed(m.ChannelID, message)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error when trying to start the game.")
+			return
+		}
+		go HighOrLowGame(state, s, m.ChannelID)
+	}
+
 	if command == "draw" {
 		state := GetServerState(m.GuildID)
+		if state.GameType() != NoGame {
+			s.ChannelMessageSend(m.ChannelID, gameInProgressWarning())
+			return
+		}
+
 		cardDrawn := state.deck.DrawCard()
 		if strings.Contains(cardDrawn.String(), "Invalid") {
 			s.ChannelMessageSend(m.ChannelID, "No more cards left!")
 		} else {
-			cardPath := GetCardPath(cardDrawn)
-			// URL of the server hosting the images
-			hostURL := os.Getenv("HOST_URL")
-			if len(hostURL) == 0 {
-				hostURL = "http://localhost:8080"
-			}
-			cardURL := fmt.Sprintf("%s/%s", hostURL, cardPath)
+			cardURL := GetCardURL(cardDrawn)
 			message := &discordgo.MessageEmbed{
 				Color: 0x7fb2f0,
 				Title: cardDrawn.String(),
@@ -176,12 +235,140 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	if command == "shuffle" {
 		state := GetServerState(m.GuildID)
+		if state.GameType() != NoGame {
+			s.ChannelMessageSend(m.ChannelID, gameInProgressWarning())
+			return
+		}
+
 		state.deck.Shuffle()
 		s.ChannelMessageSend(m.ChannelID, "Cards shuffled!")
 	}
 	if command == "reset_cards" {
 		state := GetServerState(m.GuildID)
+		if state.GameType() != NoGame {
+			s.ChannelMessageSend(m.ChannelID, gameInProgressWarning())
+			return
+		}
+
 		state.deck = playingcards.NewDeck()
 		s.ChannelMessageSend(m.ChannelID, "Cards have been reset.")
 	}
+	if command == "quitgame" {
+		state := GetServerState(m.GuildID)
+		if state.GameType() == NoGame {
+			s.ChannelMessageSend(m.ChannelID, "There is no game in progress.")
+			return
+		}
+
+		state.game.gameType = NoGame
+		state.deck = playingcards.NewDeck()
+		s.ChannelMessageSend(m.ChannelID, "Stopped the game.")
+	}
+}
+
+func gameInProgressWarning() string {
+	return fmt.Sprintf("A game is currently in progress! Enter %squitgame to stop the game.", prefix)
+}
+
+func messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
+	state := GetServerState(m.GuildID)
+	if state.GameType() == NoGame {
+		// Reactions are used in games only
+		return
+	}
+	if m.MessageReaction.UserID == s.State.User.ID || state.game.channelID != m.ChannelID {
+		return
+	}
+
+	if state.game.lastMessageID == m.MessageID {
+		reactionName := m.MessageReaction.Emoji.APIName()
+		if reactionName == "⬆️" {
+			fmt.Println("High")
+		} else if reactionName == "⬇️" {
+			fmt.Println("Low")
+		}
+		// TODO: put players into 2 groups for high-low guess
+		state.Players()[m.MessageReaction.UserID] = true
+	}
+}
+
+// HighOrLowGame starts a new game of High or Low for the given Discord server in the channel the bot responded to.
+func HighOrLowGame(state *ServerState, s *discordgo.Session, channelID string) {
+	state.game.gameType = HighOrLow
+	state.deck = playingcards.NewDeck()
+	state.deck.Shuffle()
+	time.Sleep(5 * time.Second)
+
+	// Set up the game state
+	state.game.channelID = channelID
+
+	// Game loop
+	for {
+		if state.game.gameType != HighOrLow {
+			// Reset game state and leave
+			state.game.gameType = NoGame
+			state.game.channelID = ""
+			state.players = make(map[string]bool)
+			state.deck = playingcards.NewDeck()
+			return
+		}
+		cardDrawn := state.deck.DrawCard()
+		if strings.Contains(cardDrawn.String(), "Invalid") {
+			s.ChannelMessageSend(channelID, "No more cards left!")
+			break
+		} else {
+			// First draw a card, add up/down reactions, then wait 5 seconds
+			cardURL := GetCardURL(cardDrawn)
+			message := &discordgo.MessageEmbed{
+				Color: 0x3dbb6b,
+				Title: cardDrawn.String(),
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: fmt.Sprintf("%d cards remaining.", state.deck.Size()),
+				},
+				Image: &discordgo.MessageEmbedImage{
+					URL: cardURL,
+				},
+			}
+			messageObj, err := s.ChannelMessageSendEmbed(channelID, message)
+			if err != nil {
+				// Something went wrong, stop the game
+				state.game.gameType = NoGame
+				state.deck = playingcards.NewDeck()
+				s.ChannelMessageSend(channelID, "Error found while running the game. Exiting...")
+				return
+			}
+			s.MessageReactionAdd(channelID, messageObj.ID, "\xe2\xac\x86\xef\xb8\x8f")
+			s.MessageReactionAdd(channelID, messageObj.ID, "\xe2\xac\x87\xef\xb8\x8f")
+			state.game.lastMessageID = messageObj.ID
+
+			time.Sleep(5 * time.Second)
+
+			// TODO Check all players who have reacted, remove wrong responses
+			break
+		}
+	}
+
+	// List the winners
+	winners := "Winners: "
+	for player, won := range state.Players() {
+		if won {
+			member, err := s.GuildMember(state.id, player)
+			if err != nil {
+				continue
+			}
+			playerName := member.Nick
+			if len(playerName) == 0 {
+				playerName = member.User.Username
+			}
+			winners += fmt.Sprintf("%s ", playerName)
+		}
+	}
+
+	s.ChannelMessageSend(channelID, winners)
+
+	// Reset game state
+	state.game.gameType = NoGame
+	state.game.channelID = ""
+	state.players = make(map[string]bool)
+	state.deck = playingcards.NewDeck()
 }
