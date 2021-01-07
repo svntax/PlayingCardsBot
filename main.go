@@ -71,11 +71,18 @@ type GameState struct {
 
 // ServerState holds data on the current state of a Discord server
 type ServerState struct {
-	id      string
-	deck    playingcards.Deck
-	game    GameState
-	players map[string]*PlayerState
+	id         string
+	deck       playingcards.Deck
+	game       GameState
+	players    map[string]*PlayerState
+	cardsStyle int
 }
+
+// Constants that represent what card images to use
+const (
+	KenneyLarge = iota
+	KenneyPixel
+)
 
 var serverStates = make(map[string]*ServerState)
 
@@ -83,7 +90,7 @@ var prefix string = "$pcb "
 
 // NewServerState creates a new state struct for the given Discord server
 func NewServerState(guildID string) *ServerState {
-	ss := ServerState{id: guildID, players: make(map[string]*PlayerState)}
+	ss := ServerState{id: guildID, players: make(map[string]*PlayerState), cardsStyle: KenneyLarge}
 	return &ss
 }
 
@@ -156,15 +163,21 @@ func GetServerState(guildID string) *ServerState {
 }
 
 // GetCardPath is specific to how the card images are named
-func GetCardPath(card playingcards.Card) string {
-	// Kenney's cards are of the format "card_<suit>_XX"
+func GetCardPath(card playingcards.Card, style int) string {
 	suit := strings.ToLower(card.Suit().String())
 	valueString := ""
+	path := ""
 	switch card.Value() {
 	case 1:
 		valueString = "A"
 	case 2, 3, 4, 5, 6, 7, 8, 9, 10:
-		valueString = fmt.Sprintf("%02d", card.Value())
+		if style == KenneyPixel {
+			// Kenney's pixel cards are 0-padded
+			valueString = fmt.Sprintf("%02d", card.Value())
+		} else if style == KenneyLarge {
+			valueString = fmt.Sprintf("%d", card.Value())
+		}
+
 	case 11:
 		valueString = "J"
 	case 12:
@@ -174,13 +187,20 @@ func GetCardPath(card playingcards.Card) string {
 	default:
 		return ""
 	}
-	path := fmt.Sprintf("card_images/kenney_cards_large/card_%s_%s.png", suit, valueString)
+	if style == KenneyLarge {
+		// Kenney's normal cards are of the format "card<Suit>XX" in camelCase
+		path = fmt.Sprintf("card_images/kenney_cards_large/card%s%s.png", strings.ToUpper(suit[0:1])+suit[1:], valueString)
+	} else if style == KenneyPixel {
+		// Kenney's pixel cards are of the format "card_<suit>_XX"
+		path = fmt.Sprintf("card_images/kenney_cards_pixel/card_%s_%s.png", suit, valueString)
+	}
+
 	return path
 }
 
 // GetCardURL returns the full url to the image for the given card
-func GetCardURL(card playingcards.Card) string {
-	cardPath := GetCardPath(card)
+func GetCardURL(card playingcards.Card, style int) string {
+	cardPath := GetCardPath(card, style)
 	// URL of the server hosting the images
 	hostURL := os.Getenv("HOST_URL")
 	if len(hostURL) == 0 {
@@ -207,16 +227,29 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		infoString.WriteString(fmt.Sprintf("**%sdraw**: Draw a card from the current deck.\n", prefix))
 		infoString.WriteString(fmt.Sprintf("**%sshuffle**: Shuffle the current deck of cards.\n", prefix))
 		infoString.WriteString(fmt.Sprintf("**%sreset_cards**: Make a brand new, ordered deck of 52 cards.\n", prefix))
+		infoString.WriteString(fmt.Sprintf("**%sset_style_normal**: Change the style of the cards to normal.\n", prefix))
+		infoString.WriteString(fmt.Sprintf("**%sset_style_pixel**: Change the style of the cards to pixel art.\n", prefix))
 
 		infoString.WriteString("\n__**Games**__\n")
 		infoString.WriteString(fmt.Sprintf("**%shigh_or_low**: Start a game of High or Low.\n", prefix))
-		infoString.WriteString(fmt.Sprintf("**%squitgame**: Stop the currently running game..\n", prefix))
+		infoString.WriteString(fmt.Sprintf("**%squitgame**: Stop the currently running game.\n", prefix))
 		message := &discordgo.MessageEmbed{
 			Color:       0x607d8b,
 			Title:       "Playing Cards Bot Info",
 			Description: infoString.String(),
 		}
 		s.ChannelMessageSendEmbed(m.ChannelID, message)
+	}
+
+	if command == "set_style_normal" {
+		state := GetServerState(m.GuildID)
+		state.cardsStyle = KenneyLarge
+		s.ChannelMessageSend(m.ChannelID, "Changed cards to normal style.")
+	}
+	if command == "set_style_pixel" {
+		state := GetServerState(m.GuildID)
+		state.cardsStyle = KenneyPixel
+		s.ChannelMessageSend(m.ChannelID, "Changed cards to pixel art style.")
 	}
 
 	if command == "high_or_low" {
@@ -254,7 +287,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if strings.Contains(cardDrawn.String(), "Invalid") {
 			s.ChannelMessageSend(m.ChannelID, "No more cards left!")
 		} else {
-			cardURL := GetCardURL(cardDrawn)
+			cardURL := GetCardURL(cardDrawn, state.cardsStyle)
 			message := &discordgo.MessageEmbed{
 				Color: 0x7fb2f0,
 				Title: cardDrawn.String(),
@@ -381,7 +414,7 @@ func HighOrLowGame(state *ServerState, s *discordgo.Session, channelID string) {
 			return
 		}
 		// Show the current card, add up/down reactions, then wait 5 seconds
-		cardURL := GetCardURL(cardDrawn)
+		cardURL := GetCardURL(cardDrawn, state.cardsStyle)
 		message := &discordgo.MessageEmbed{
 			Color: 0x3dbb6b,
 			Title: cardDrawn.String(),
@@ -483,7 +516,7 @@ func HighOrLowGame(state *ServerState, s *discordgo.Session, channelID string) {
 	}
 
 	// Print the last card of the game
-	cardURL := GetCardURL(cardDrawn)
+	cardURL := GetCardURL(cardDrawn, state.cardsStyle)
 	message := &discordgo.MessageEmbed{
 		Color: 0x3dbb6b,
 		Title: fmt.Sprintf("Last card drawn: %s", cardDrawn.String()),
