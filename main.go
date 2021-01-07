@@ -202,7 +202,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := strings.TrimPrefix(m.Content, prefix)
 
 	if command == "info" {
-		s.ChannelMessageSend(m.ChannelID, "This bot allows users to play with a standard 52-card deck of playing cards.")
+		var infoString strings.Builder
+		infoString.WriteString("This bot allows users to play with a standard 52-card deck of playing cards.\n\n")
+		infoString.WriteString(fmt.Sprintf("**%sdraw**: Draw a card from the current deck.\n", prefix))
+		infoString.WriteString(fmt.Sprintf("**%sshuffle**: Shuffle the current deck of cards.\n", prefix))
+		infoString.WriteString(fmt.Sprintf("**%sreset_cards**: Make a brand new, ordered deck of 52 cards.\n", prefix))
+
+		infoString.WriteString("\n__**Games**__\n")
+		infoString.WriteString(fmt.Sprintf("**%shigh_or_low**: Start a game of High or Low.\n", prefix))
+		infoString.WriteString(fmt.Sprintf("**%squitgame**: Stop the currently running game..\n", prefix))
+		message := &discordgo.MessageEmbed{
+			Color:       0x607d8b,
+			Title:       "Playing Cards Bot Info",
+			Description: infoString.String(),
+		}
+		s.ChannelMessageSendEmbed(m.ChannelID, message)
 	}
 
 	if command == "high_or_low" {
