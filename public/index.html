@@ -12,35 +12,67 @@
         <img class="avatar-image" src="bot_avatar.png">
         <p>A Discord bot for playing games with standard playing cards.</p>
         <a class="button-primary" href="https://discord.com/api/oauth2/authorize?client_id=261707792824532992&permissions=85056&scope=bot" target="_blank">Add to Discord</a>
+        <img id="bg-cards-left" src="bg_cards_left.png">
+        <img id="bg-cards-right" src="bg_cards_right.png">
     </header>
     
     <section class="feature">
-        <img class="feature-image" src="https://via.placeholder.com/640x480">
+        <img class="feature-image" src="cards_feature_01.gif">
         <section class="feature-section">
-            <h1 class="section-header">Feature 1</h1>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            <h1 class="section-header">Draw and Shuffle Cards</h1>
+            <p>Each server gets a standard 52-card deck of playing cards that anyone can play with. Use <strong>$pcb info</strong> at any time for a list of commands.</p>
         </section>
     </section>
 
     <section class="feature feature-align-right">
-        <img class="feature-image" src="https://via.placeholder.com/640x480">
+        <img class="feature-image" src="cards_feature_02.gif">
         <section class="feature-section">
-            <h1 class="section-header">Feature 2</h1>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            <h1 class="section-header">Choose Your Art Style</h1>
+            <p>Toggle between a normal art style and a pixel art style for your server's deck of cards.</p>
         </section>
     </section>
 
     <section class="feature">
-        <img class="feature-image" src="https://via.placeholder.com/640x480">
+        <img class="feature-image" src="cards_feature_03.gif">
         <section class="feature-section">
-            <h1 class="section-header">Feature 3</h1>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            <h1 class="section-header">Play Card Games</h1>
+            <p>Play a game of High or Low with others in your server!</p>
         </section>
+    </section>
+
+    <section class="commands-section">
+        <h1 class="section-header">Commands</h1>
+        <div class="commands-list">
+            <div class="row">
+                <span><strong>$pcb info</strong></span> <span>Displays bot info and a list of all commands.</span>
+            </div>
+            <div class="row">
+                <span><strong>$pcb draw</strong></span> <span>Draws a card from the current deck.</span>
+            </div>
+            <div class="row">
+                <span><strong>$pcb shuffle</strong></span> <span>Shuffles the current deck of cards.</span>
+            </div>
+            <div class="row">
+                <span><strong>$pcb reset_cards</strong></span> <span>Replaces the current deck with a brand new, ordered deck of 52 cards.</span>
+            </div>
+            <div class="row">
+                <span><strong>$pcb set_style_normal</strong></span> <span>Changes the art style of the cards to normal.</span>
+            </div>
+            <div class="row">
+                <span><strong>$pcb set_style_pixel</strong></span> <span>Changes the art style of the cards to pixel art.</span>
+            </div>
+            <div class="row">
+                <span><strong>$pcb high_or_low</strong></span> <span>Starts a game of High or Low.</span>
+            </div>
+            <div class="row">
+                <span><strong>$pcb quitgame</strong></span> <span>Stops any currently running game.</span>
+            </div>
+        </div>
     </section>
 
     <footer>
 		<div>
-			<span>Made by svntax</span>
+			<span>Made by <a href="https://github.com/svntax/PlayingCardsBot" target="_blank">svntax</a></span>
 		</div>
     </footer>
 </body>
