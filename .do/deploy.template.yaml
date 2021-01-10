@@ -1,0 +1,13 @@
+spec:
+  name: PlayingCardsBot
+  services:
+  - name: web
+   git:
+     branch: main
+     repo_clone_url: https://github.com/svntax/PlayingCardsBot.git
+   envs:
+   - key: BOT_TOKEN
+     value: "discord-bot-token"
+     type: SECRET
+   - key: HOST_URL
+     value: "https://yourdomainhere.tld"
