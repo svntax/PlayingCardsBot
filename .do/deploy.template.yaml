@@ -1,7 +1,7 @@
 spec:
-  name: PlayingCardsBot
-  services:
-  - name: web
+ name: PlayingCardsBot
+ services:
+ - name: web
    git:
      branch: main
      repo_clone_url: https://github.com/svntax/PlayingCardsBot.git
