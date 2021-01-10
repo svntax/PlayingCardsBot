@@ -1,5 +1,5 @@
 spec:
- name: PlayingCardsBot
+ name: playing-cards-bot
  services:
  - name: web
    git:
