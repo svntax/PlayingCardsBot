@@ -1,6 +1,9 @@
 # Playing Cards Bot
 A Discord bot that gives servers a standard 52-card deck of cards for users to play with. Made using [DiscordGo](https://github.com/bwmarrin/discordgo).
 
+## Commands
+The list of commands can be found on the live website (https://playing-cards-bot-rvpup.ondigitalocean.app/).
+
 ## Setup
 Go to the live website (https://playing-cards-bot-rvpup.ondigitalocean.app/), and click on "Add to Discord" to be redirected to Discord, log in, then choose a server to add the bot to. Note that you'll need your own Discord server or have access to a server where you have `Manage Server` permissions.
 
