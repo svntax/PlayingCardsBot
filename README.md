@@ -2,7 +2,19 @@
 A Discord bot that gives servers a standard 52-card deck of cards for users to play with. Made using [DiscordGo](https://github.com/bwmarrin/discordgo).
 
 ## Commands
-The list of commands can be found on the live website (https://playing-cards-bot-rvpup.ondigitalocean.app/).
+
+| Command | Description |
+| --- | --- |
+| $pcb info | Displays bot info and a list of all commands. |
+| $pcb draw | Draws a card from the current deck. |
+| $pcb shuffle | Shuffles the current deck of cards. |
+| $pcb reset_cards | Replaces the current deck with a brand new, ordered deck of 52 cards. |
+| $pcb set_style_normal | Changes the art style of the cards to normal. |
+| $pcb set_style_pixel | Changes the art style of the cards to pixel art. |
+| $pcb high_or_low | Starts a game of High or Low. |
+| $pcb quitgame | Stops any currently running game. |
+
+The list of commands can also be found on the live website (https://playing-cards-bot-rvpup.ondigitalocean.app/).
 
 ## Setup
 Go to the live website (https://playing-cards-bot-rvpup.ondigitalocean.app/), and click on "Add to Discord" to be redirected to Discord, log in, then choose a server to add the bot to. Note that you'll need your own Discord server or have access to a server where you have `Manage Server` permissions.
