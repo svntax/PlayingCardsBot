@@ -11,6 +11,8 @@ A Discord bot that gives servers a standard 52-card deck of cards for users to p
 | $pcb reset_cards | Replaces the current deck with a brand new, ordered deck of 52 cards. |
 | $pcb set_style_normal | Changes the art style of the cards to normal. |
 | $pcb set_style_pixel | Changes the art style of the cards to pixel art. |
+| $pcb include_jokers | Add the red and black Joker cards to the deck. |
+| $pcb remove_jokers | Remove the red and black Joker cards from the deck. |
 | $pcb high_or_low | Starts a game of High or Low. |
 | $pcb quitgame | Stops any currently running game. |
 

@@ -15,6 +15,8 @@ const (
 	DIAMONDS
 	HEARTS
 	SPADES
+	RED_JOKER
+	BLACK_JOKER
 )
 
 func (s Suit) String() string {
@@ -27,6 +29,10 @@ func (s Suit) String() string {
 		return "Hearts"
 	case SPADES:
 		return "Spades"
+	case RED_JOKER:
+		return "Red Joker"
+	case BLACK_JOKER:
+		return "Black Joker"
 	default:
 		panic("Invalid suit value")
 	}
@@ -45,6 +51,8 @@ func (c Card) NumberAsString() string {
 		return "Queen"
 	case 13:
 		return "King"
+	case -1:
+		return "Joker"
 	default:
 		return "Invalid value"
 	}
@@ -67,6 +75,10 @@ func SuitStringToInt(suit string) Suit {
 		return HEARTS
 	case "SPADES":
 		return SPADES
+	case "RED_JOKER":
+		return RED_JOKER
+	case "BLACK_JOKER":
+		return BLACK_JOKER
 	default:
 		panic("A card's suit must be Clubs, Diamonds, Hearts, or Spades.")
 	}
@@ -81,9 +93,9 @@ func NewCard(num int, s Suit) Card {
 // Color returns the card's color
 func (c Card) Color() string {
 	switch c.Suit() {
-	case CLUBS, SPADES:
+	case CLUBS, SPADES, BLACK_JOKER:
 		return "Black"
-	case HEARTS, DIAMONDS:
+	case HEARTS, DIAMONDS, RED_JOKER:
 		return "Red"
 	default:
 		panic("Invalid suit value")
@@ -101,5 +113,11 @@ func (c Card) Value() int {
 }
 
 func (c Card) String() string {
+	if c.suit == RED_JOKER {
+		return "Red Joker"
+	}
+	if c.suit == BLACK_JOKER {
+		return "Black Joker"
+	}
 	return fmt.Sprintf("%s of %s", c.NumberAsString(), c.Suit())
 }

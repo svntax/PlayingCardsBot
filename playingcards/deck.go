@@ -12,8 +12,8 @@ type Deck struct {
 	cards []Card
 }
 
-// NewDeck creates a new deck of cards
-func NewDeck() Deck {
+// NewDeckWithoutJokers creates a new deck of cards with no Joker cards
+func NewDeckWithoutJokers() Deck {
 	deck := make([]Card, 52)
 	i := 0
 	for suit := CLUBS; suit <= SPADES; suit++ {
@@ -24,6 +24,34 @@ func NewDeck() Deck {
 		}
 	}
 	return Deck{cards: deck}
+}
+
+// NewDeckWithJokers creates a new deck of cards with a red and black Joker included
+func NewDeckWithJokers() Deck {
+	deck := make([]Card, 54)
+	i := 0
+	for suit := CLUBS; suit <= SPADES; suit++ {
+		for n := 1; n <= 13; n++ {
+			card := NewCard(n, suit)
+			deck[i] = card
+			i++
+		}
+	}
+	redJoker := NewCard(-1, RED_JOKER)
+	deck[i] = redJoker
+	i++
+	blackJoker := NewCard(-1, BLACK_JOKER)
+	deck[i] = blackJoker
+	return Deck{cards: deck}
+}
+
+// NewDeck creates a new deck of cards
+func NewDeck(includeJokers bool) Deck {
+	if includeJokers {
+		return NewDeckWithJokers()
+	} else {
+		return NewDeckWithoutJokers()
+	}
 }
 
 // Size returns the number of cards remaining in this deck
