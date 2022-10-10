@@ -5,16 +5,18 @@ A Discord bot that gives servers a standard 52-card deck of cards for users to p
 
 | Command | Description |
 | --- | --- |
-| $pcb info | Displays bot info and a list of all commands. |
-| $pcb draw | Draws a card from the current deck. |
-| $pcb shuffle | Shuffles the current deck of cards. |
-| $pcb reset_cards | Replaces the current deck with a brand new, ordered deck of 52 cards. |
-| $pcb set_style_normal | Changes the art style of the cards to normal. |
-| $pcb set_style_pixel | Changes the art style of the cards to pixel art. |
-| $pcb include_jokers | Add the red and black Joker cards to the deck. |
-| $pcb remove_jokers | Remove the red and black Joker cards from the deck. |
+| /info, $pcb info | Displays bot info and a list of all commands. |
+| /draw, $pcb draw | Draws a card from the current deck. |
+| /shuffle, $pcb shuffle | Shuffles the current deck of cards. |
+| /reset-cards, $pcb reset_cards | Replaces the current deck with a brand new, ordered deck of 52 cards. |
+| /set-style | Change the style of the cards. Options are "normal" and "pixel". |
+| (Old) $pcb set_style_normal | Changes the art style of the cards to normal. |
+| (Old) $pcb set_style_pixel | Changes the art style of the cards to pixel art. |
+| /include-jokers | Add or remove the red & black Joker cards from the deck. |
+| (Old) $pcb include_jokers | Add the red and black Joker cards to the deck. |
+| (Old) $pcb remove_jokers | Remove the red and black Joker cards from the deck. |
 | $pcb high_or_low | Starts a game of High or Low. |
-| $pcb quitgame | Stops any currently running game. |
+| /quit-game, $pcb quitgame | Stops any currently running game. |
 
 The list of commands can also be found on the live website (https://playing-cards-bot-rvpup.ondigitalocean.app/).
 
@@ -57,4 +59,4 @@ The `/card_images/` directory contains the playing cards images the bot will use
 - https://www.kenney.nl/assets/boardgame-pack
 - https://www.kenney.nl/assets/playing-cards-pack
 
-The bot can be hosted locally by running `go run main.go -t=<your bot token>`, but the card images will not display since they won't be reachable within Discord. Without a `HOST_URL`, the bot will be running on `http://localhost:8080` by default.
+The bot can be hosted locally by running `go run main.go -t=<your bot token> -app=<your bot application ID>`, but the card images will not display since they won't be reachable within Discord. Without a `HOST_URL`, the bot will be running on `http://localhost:8080` by default.
