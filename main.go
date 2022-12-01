@@ -99,9 +99,9 @@ const (
 	KenneyPixel
 )
 
-var serverStates = make(map[string]*ServerState)
-
 var prefix string = "$pcb "
+
+var serverStates = make(map[string]*ServerState)
 
 // NewServerState creates a new state struct for the given Discord server
 func NewServerState(guildID string) *ServerState {
@@ -330,19 +330,15 @@ func getInfoText() string {
 	// Copied from message listener
 	var infoString strings.Builder
 	infoString.WriteString("This bot allows users to play with a standard 52-card deck of playing cards.\n\n")
-	infoString.WriteString(fmt.Sprintf("**/draw**, **%sdraw**: Draw a card from the current deck.\n", prefix))
-	infoString.WriteString(fmt.Sprintf("**/shuffle**, **%sshuffle**: Shuffle the current deck of cards.\n", prefix))
-	infoString.WriteString(fmt.Sprintf("**/reset-cards**, **%sreset_cards**: Make a brand new, ordered deck of 52 cards.\n", prefix))
+	infoString.WriteString("**/draw**: Draw a card from the current deck.\n")
+	infoString.WriteString("**/shuffle**: Shuffle the current deck of cards.\n")
+	infoString.WriteString("**/reset-cards**: Make a brand new, ordered deck of 52 cards.\n")
 	infoString.WriteString("**/set-style**: Change the style of the cards. Options are \"normal\" and \"pixel\".\n")
-	infoString.WriteString(fmt.Sprintf("**%sset_style_normal**: Change the style of the cards to normal.\n", prefix))
-	infoString.WriteString(fmt.Sprintf("**%sset_style_pixel**: Change the style of the cards to pixel art.\n", prefix))
 	infoString.WriteString("**/include-jokers**: Add or remove the Joker cards from the deck.\n")
-	infoString.WriteString(fmt.Sprintf("**%sinclude_jokers**: Add the red and black Joker cards to the deck.\n", prefix))
-	infoString.WriteString(fmt.Sprintf("**%sremove_jokers**: Remove the red and black Joker cards from the deck.\n", prefix))
 
 	infoString.WriteString("\n__**Games**__\n")
-	infoString.WriteString(fmt.Sprintf("**%shigh_or_low**: Start a game of High or Low.\n", prefix))
-	infoString.WriteString(fmt.Sprintf("**/quit-game**, **%squitgame**: Stop the currently running game.\n", prefix))
+	infoString.WriteString(fmt.Sprintf("**%shigh_or_low**: Start a game of High or Low (Will be reworked in the future).\n", prefix))
+	infoString.WriteString("**/quit-game**: Stop the currently running game.\n")
 
 	return infoString.String()
 }
@@ -535,33 +531,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	command := strings.TrimPrefix(m.Content, prefix)
 
-	if command == "info" {
-		message := &discordgo.MessageEmbed{
-			Color:       0x607d8b,
-			Title:       "Playing Cards Bot Info",
-			Description: getInfoText(),
-		}
-		s.ChannelMessageSendEmbed(m.ChannelID, message)
-	}
-
-	if command == "set_style_normal" {
-		msg := setCardsStyle(m.GuildID, "normal")
-		s.ChannelMessageSend(m.ChannelID, msg)
-	}
-	if command == "set_style_pixel" {
-		msg := setCardsStyle(m.GuildID, "pixel")
-		s.ChannelMessageSend(m.ChannelID, msg)
-	}
-
-	if command == "include_jokers" {
-		msg := toggleJokerCards(m.GuildID, true)
-		s.ChannelMessageSend(m.ChannelID, msg)
-	}
-	if command == "remove_jokers" {
-		msg := toggleJokerCards(m.GuildID, false)
-		s.ChannelMessageSend(m.ChannelID, msg)
-	}
-
 	// TODO: Relies on message reactions. Switch to using buttons instead.
 	if command == "high_or_low" {
 		state := GetServerState(m.GuildID)
@@ -586,67 +555,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		state.game.lastMessageID = messageObj.ID
 		go HighOrLowGame(state, s, m.ChannelID)
 	}
-
-	if command == "draw" {
-		state := GetServerState(m.GuildID)
-		if state.GameType() != NoGame {
-			s.ChannelMessageSend(m.ChannelID, gameInProgressWarning())
-			return
-		}
-
-		cardDrawn := state.deck.DrawCard()
-		if strings.Contains(cardDrawn.String(), "Invalid") {
-			s.ChannelMessageSend(m.ChannelID, "No more cards left!")
-		} else {
-			cardURL := GetCardURL(cardDrawn, state.cardsStyle)
-			message := &discordgo.MessageEmbed{
-				Color: 0x7fb2f0,
-				Title: cardDrawn.String(),
-				Footer: &discordgo.MessageEmbedFooter{
-					Text: fmt.Sprintf("%d cards remaining.", state.deck.Size()),
-				},
-				Image: &discordgo.MessageEmbedImage{
-					URL: cardURL,
-				},
-			}
-			s.ChannelMessageSendEmbed(m.ChannelID, message)
-		}
-	}
-	if command == "shuffle" {
-		state := GetServerState(m.GuildID)
-		if state.GameType() != NoGame {
-			s.ChannelMessageSend(m.ChannelID, gameInProgressWarning())
-			return
-		}
-
-		state.deck.Shuffle()
-		s.ChannelMessageSend(m.ChannelID, "Cards shuffled!")
-	}
-	if command == "reset_cards" {
-		state := GetServerState(m.GuildID)
-		if state.GameType() != NoGame {
-			s.ChannelMessageSend(m.ChannelID, gameInProgressWarning())
-			return
-		}
-
-		state.deck = playingcards.NewDeck(state.includeJokers)
-		s.ChannelMessageSend(m.ChannelID, "Cards have been reset.")
-	}
-	if command == "quitgame" {
-		state := GetServerState(m.GuildID)
-		if state.GameType() == NoGame {
-			s.ChannelMessageSend(m.ChannelID, "There is no game in progress.")
-			return
-		}
-
-		state.game.gameType = NoGame
-		state.deck = playingcards.NewDeck(state.includeJokers)
-		s.ChannelMessageSend(m.ChannelID, "Stopped the game.")
-	}
 }
 
 func gameInProgressWarning() string {
-	return fmt.Sprintf("A game is currently in progress! Enter `%squitgame` to stop the game.", prefix)
+	return fmt.Sprintf("A game is currently in progress! Use `/quit-game` to stop the game.")
 }
 
 func messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
